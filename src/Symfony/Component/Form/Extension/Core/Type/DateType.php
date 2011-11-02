@@ -103,7 +103,7 @@ class DateType extends AbstractType
                 ->add('month', $options['widget'], $monthOptions)
                 ->add('day', $options['widget'], $dayOptions)
                 ->appendClientTransformer(new DateTimeToArrayTransformer(
-                    $options['data_timezone'], $options['user_timezone'], array('year', 'month', 'day')
+                    $options['data_timezone'], $options['user_timezone'], array('year', 'month', 'day'), false, $options['allow_partial'], $options['empty_defaults']
                 ))
             ;
         }
@@ -165,10 +165,12 @@ class DateType extends AbstractType
             'data_timezone'  => null,
             'user_timezone'  => null,
             'empty_value'    => null,
+            'empty_defaults' => null,
             // Don't modify \DateTime classes by reference, we treat
             // them like immutable value objects
             'by_reference'   => false,
             'error_bubbling' => false,
+            'allow_partial'  => true,
         );
     }
 

@@ -26,6 +26,17 @@ class DateTimeToArrayTransformer extends BaseDateTimeTransformer
 
     private $fields;
 
+    private $allowPartial;
+
+    private $defaults = array(
+        'year'   => 1970,
+        'month'  => 1,
+        'day'    => 1,
+        'hour'   => 0,
+        'minute' => 0,
+        'second' => 0,
+    );
+
     /**
      * Constructor.
      *
@@ -33,10 +44,12 @@ class DateTimeToArrayTransformer extends BaseDateTimeTransformer
      * @param string  $outputTimezone   The output timezone
      * @param array   $fields           The date fields
      * @param Boolean $pad              Whether to use padding
+     * @param Boolean $allowPartial     Allow partial dates to be entered in reverseTransform
+     * @param array   $defaults         The default values to use for each component if one is not provided
      *
      * @throws UnexpectedTypeException if a timezone is not a string
      */
-    public function __construct($inputTimezone = null, $outputTimezone = null, array $fields = null, $pad = false)
+    public function __construct($inputTimezone = null, $outputTimezone = null, array $fields = null, $pad = false, $allowPartial = true, array $defaults = null)
     {
         parent::__construct($inputTimezone, $outputTimezone);
 
@@ -44,8 +57,13 @@ class DateTimeToArrayTransformer extends BaseDateTimeTransformer
             $fields = array('year', 'month', 'day', 'hour', 'minute', 'second');
         }
 
+        if (null !== $defaults) {
+            $this->defaults = array_merge($this->defaults, $defaults);
+        }
+
         $this->fields = $fields;
         $this->pad = (Boolean) $pad;
+        $this->allowPartial = (Boolean) $allowPartial;
     }
 
     /**
@@ -131,7 +149,7 @@ class DateTimeToArrayTransformer extends BaseDateTimeTransformer
         $emptyFields = array();
 
         foreach ($this->fields as $field) {
-            if (!isset($value[$field])) {
+            if (!isset($value[$field]) || (!$this->allowPartial && empty($value[$field]))) {
                 $emptyFields[] = $field;
             }
         }
@@ -149,12 +167,12 @@ class DateTimeToArrayTransformer extends BaseDateTimeTransformer
         try {
             $dateTime = new \DateTime(sprintf(
                 '%s-%s-%s %s:%s:%s %s',
-                empty($value['year']) ? '1970' : $value['year'],
-                empty($value['month']) ? '1' : $value['month'],
-                empty($value['day']) ? '1' : $value['day'],
-                empty($value['hour']) ? '0' : $value['hour'],
-                empty($value['minute']) ? '0' : $value['minute'],
-                empty($value['second']) ? '0' : $value['second'],
+                empty($value['year']) ? $this->defaults['year'] : $value['year'],
+                empty($value['month']) ? $this->defaults['month'] : $value['month'],
+                empty($value['day']) ? $this->defaults['day'] : $value['day'],
+                empty($value['hour']) ? $this->defaults['second'] : $value['hour'],
+                empty($value['minute']) ? $this->defaults['minute'] : $value['minute'],
+                empty($value['second']) ? $this->defaults['second'] : $value['second'],
                 $this->outputTimezone
             ));
 
