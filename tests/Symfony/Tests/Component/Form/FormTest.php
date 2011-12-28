@@ -1003,6 +1003,37 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($parent, $view->getParent());
     }
 
+    public function testGetErrorsAsString()
+    {
+        $form = $this->getBuilder()->getForm();
+        $form->addError(new FormError('Error!'));
+
+        $this->assertEquals("ERROR: Error!\n", $form->getErrorsAsString());
+    }
+
+    public function testGetErrorsAsStringDeep()
+    {
+        $form = $this->getBuilder()->getForm();
+        $form->addError(new FormError('Error!'));
+
+        $parent = $this->getBuilder()->getForm();
+        $parent->add($form);
+
+        $parent->add($this->getBuilder('foo')->getForm());
+
+        $this->assertEquals("name:\n    ERROR: Error!\nfoo:\n    No errors\n", $parent->getErrorsAsString());
+    }
+
+    public function testGetValidatorsReturnsValidators()
+    {
+        $validator = $this->getFormValidator();
+        $form = $this->getBuilder()
+            ->addValidator($validator)
+            ->getForm();
+
+        $this->assertEquals(array($validator), $form->getValidators());
+    }
+
     protected function getBuilder($name = 'name', EventDispatcherInterface $dispatcher = null)
     {
         return new FormBuilder($name, $this->factory, $dispatcher ?: $this->dispatcher);
