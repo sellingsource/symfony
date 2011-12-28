@@ -11,7 +11,7 @@
 
 namespace Symfony\Tests\Bridge\Doctrine\Form\Type;
 
-require_once __DIR__.'/../DoctrineOrmTestCase.php';
+require_once __DIR__.'/../../DoctrineOrmTestCase.php';
 require_once __DIR__.'/../../Fixtures/ItemGroupEntity.php';
 require_once __DIR__.'/../../Fixtures/SingleIdentEntity.php';
 require_once __DIR__.'/../../Fixtures/SingleStringIdentEntity.php';
@@ -20,24 +20,23 @@ require_once __DIR__.'/../../Fixtures/CompositeStringIdentEntity.php';
 
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Tests\Component\Form\Extension\Core\Type\TypeTestCase;
-use Symfony\Tests\Bridge\Doctrine\Form\DoctrineOrmTestCase;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\ItemGroupEntity;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\SingleIdentEntity;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\SingleStringIdentEntity;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\CompositeIdentEntity;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\CompositeStringIdentEntity;
+use Symfony\Tests\Bridge\Doctrine\DoctrineOrmTestCase;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\ItemGroupEntity;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\SingleIdentEntity;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\SingleStringIdentEntity;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\CompositeIdentEntity;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\CompositeStringIdentEntity;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
 use Doctrine\ORM\Tools\SchemaTool;
-use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Collections\ArrayCollection;
 
 class EntityTypeTest extends TypeTestCase
 {
-    const ITEM_GROUP_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\ItemGroupEntity';
-    const SINGLE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\SingleIdentEntity';
-    const SINGLE_STRING_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\SingleStringIdentEntity';
-    const COMPOSITE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\CompositeIdentEntity';
-    const COMPOSITE_STRING_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\CompositeStringIdentEntity';
+    const ITEM_GROUP_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\ItemGroupEntity';
+    const SINGLE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\SingleIdentEntity';
+    const SINGLE_STRING_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\SingleStringIdentEntity';
+    const COMPOSITE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\CompositeIdentEntity';
+    const COMPOSITE_STRING_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\CompositeStringIdentEntity';
 
     private $em;
 
@@ -98,8 +97,6 @@ class EntityTypeTest extends TypeTestCase
 
     public function testSetDataToUninitializedEntityWithNonRequired()
     {
-        $this->markTestIncomplete('Needs to be implemented');
-
         $entity1 = new SingleIdentEntity(1, 'Foo');
         $entity2 = new SingleIdentEntity(2, 'Bar');
 
@@ -112,8 +109,42 @@ class EntityTypeTest extends TypeTestCase
             'property' => 'name'
         ));
 
-        $this->assertEquals(array('' => '', 1 => 'Foo', 2 => 'Bar'), $field->getRenderer()->getVar('choices'));
+        $this->assertEquals(array(1 => 'Foo', 2 => 'Bar'), $field->createView()->get('choices'));
+    }
 
+    public function testSetDataToUninitializedEntityWithNonRequiredToString()
+    {
+        $entity1 = new SingleIdentEntity(1, 'Foo');
+        $entity2 = new SingleIdentEntity(2, 'Bar');
+
+        $this->persist(array($entity1, $entity2));
+
+        $field = $this->factory->createNamed('entity', 'name', null, array(
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'required' => false,
+        ));
+
+        $this->assertEquals(array("1" => 'Foo', "2" => 'Bar'), $field->createView()->get('choices'));
+    }
+
+    public function testSetDataToUninitializedEntityWithNonRequiredQueryBuilder()
+    {
+        $entity1 = new SingleIdentEntity(1, 'Foo');
+        $entity2 = new SingleIdentEntity(2, 'Bar');
+
+        $this->persist(array($entity1, $entity2));
+        $qb = $this->em->createQueryBuilder()->select('e')->from(self::SINGLE_IDENT_CLASS, 'e');
+
+        $field = $this->factory->createNamed('entity', 'name', null, array(
+            'em' => 'default',
+            'class' => self::SINGLE_IDENT_CLASS,
+            'required' => false,
+            'property' => 'name',
+            'query_builder' => $qb
+        ));
+
+        $this->assertEquals(array(1 => 'Foo', 2 => 'Bar'), $field->createView()->get('choices'));
     }
 
     /**
@@ -441,8 +472,6 @@ class EntityTypeTest extends TypeTestCase
 
     public function testOverrideChoices()
     {
-        $this->markTestIncomplete('Fix me');
-
         $entity1 = new SingleIdentEntity(1, 'Foo');
         $entity2 = new SingleIdentEntity(2, 'Bar');
         $entity3 = new SingleIdentEntity(3, 'Baz');
@@ -459,7 +488,7 @@ class EntityTypeTest extends TypeTestCase
 
         $field->bind('2');
 
-        $this->assertEquals(array(1 => 'Foo', 2 => 'Bar'), $field->getRenderer()->getVar('choices'));
+        $this->assertEquals(array(1 => 'Foo', 2 => 'Bar'), $field->createView()->get('choices'));
         $this->assertTrue($field->isSynchronized());
         $this->assertEquals($entity2, $field->getData());
         $this->assertEquals(2, $field->getClientData());

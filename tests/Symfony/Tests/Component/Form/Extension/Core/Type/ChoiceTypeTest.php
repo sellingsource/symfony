@@ -11,7 +11,6 @@
 
 namespace Symfony\Tests\Component\Form\Extension\Core\Type;
 
-use Symfony\Component\Form\ChoiceField;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 
 class ChoiceTypeTest extends TypeTestCase
@@ -70,6 +69,35 @@ class ChoiceTypeTest extends TypeTestCase
         $form = $this->factory->create('choice', null, array(
             'choice_list' => array('foo' => 'foo'),
         ));
+    }
+
+    public function testExpandedChoicesOptionsTurnIntoFields()
+    {
+        $form = $this->factory->create('choice', null, array(
+            'expanded'  => true,
+            'choices'   => $this->choices,
+        ));
+
+        $this->assertCount($form->count(), $this->choices, 'Each choice should become a new field');
+    }
+
+    public function testExpandedChoicesOptionsAreFlattened()
+    {
+        $form = $this->factory->create('choice', null, array(
+            'expanded'  => true,
+            'choices'   => $this->groupedChoices,
+        ));
+
+        $flattened = array();
+        foreach ($this->groupedChoices as $choices) {
+            $flattened = array_replace($flattened, $choices);
+        }
+
+        $this->assertCount($form->count(), $flattened, 'Each nested choice should become a new field, not the groups');
+
+        foreach ($flattened as $value => $choice) {
+            $this->assertTrue($form->has($value), 'Flattened choice is named after it\'s value');
+        }
     }
 
     public function testExpandedCheckboxesAreNeverRequired()

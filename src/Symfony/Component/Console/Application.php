@@ -20,6 +20,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\Output;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\HelpCommand;
 use Symfony\Component\Console\Command\ListCommand;
@@ -108,7 +109,11 @@ class Application
                 throw $e;
             }
 
-            $this->renderException($e, $output);
+            if ($output instanceof ConsoleOutputInterface) {
+                $this->renderException($e, $output->getErrorOutput());
+            } else {
+                $this->renderException($e, $output);
+            }
             $statusCode = $e->getCode();
 
             $statusCode = is_numeric($statusCode) && $statusCode ? $statusCode : 1;
@@ -621,13 +626,31 @@ class Application
     /**
      * Returns a text representation of the Application.
      *
-     * @param string $namespace An optional namespace name
+     * @param string  $namespace An optional namespace name
+     * @param boolean $raw       Whether to return raw command list
      *
      * @return string A string representing the Application
      */
-    public function asText($namespace = null)
+    public function asText($namespace = null, $raw = false)
     {
         $commands = $namespace ? $this->all($this->findNamespace($namespace)) : $this->commands;
+
+        $width = 0;
+        foreach ($commands as $command) {
+            $width = strlen($command->getName()) > $width ? strlen($command->getName()) : $width;
+        }
+        $width += 2;
+
+        if ($raw) {
+            $messages = array();
+            foreach ($this->sortCommands($commands) as $space => $commands) {
+                foreach ($commands as $name => $command) {
+                    $messages[] = sprintf("%-${width}s %s", $name, $command->getDescription());
+                }
+            }
+
+            return implode("\n", $messages);
+        }
 
         $messages = array($this->getHelp(), '');
         if ($namespace) {
@@ -635,12 +658,6 @@ class Application
         } else {
             $messages[] = '<comment>Available commands:</comment>';
         }
-
-        $width = 0;
-        foreach ($commands as $command) {
-            $width = strlen($command->getName()) > $width ? strlen($command->getName()) : $width;
-        }
-        $width += 2;
 
         // add commands by namespace
         foreach ($this->sortCommands($commands) as $space => $commands) {
@@ -810,7 +827,7 @@ class Application
             new InputOption('--help',           '-h', InputOption::VALUE_NONE, 'Display this help message.'),
             new InputOption('--quiet',          '-q', InputOption::VALUE_NONE, 'Do not output any message.'),
             new InputOption('--verbose',        '-v', InputOption::VALUE_NONE, 'Increase verbosity of messages.'),
-            new InputOption('--version',        '-V', InputOption::VALUE_NONE, 'Display this program version.'),
+            new InputOption('--version',        '-V', InputOption::VALUE_NONE, 'Display this application version.'),
             new InputOption('--ansi',           '',   InputOption::VALUE_NONE, 'Force ANSI output.'),
             new InputOption('--no-ansi',        '',   InputOption::VALUE_NONE, 'Disable ANSI output.'),
             new InputOption('--no-interaction', '-n', InputOption::VALUE_NONE, 'Do not ask any interactive question.'),
@@ -879,6 +896,14 @@ class Application
         return sprintf('%s, %s%s', $abbrevs[0], $abbrevs[1], count($abbrevs) > 2 ? sprintf(' and %d more', count($abbrevs) - 2) : '');
     }
 
+    /**
+     * Returns the namespace part of the command name.
+     *
+     * @param string $name  The full name of the command
+     * @param string $limit The maximum number of parts of the namespace
+     *
+     * @return string The namespace of the command
+     */
     private function extractNamespace($name, $limit = null)
     {
         $parts = explode(':', $name);

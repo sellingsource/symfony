@@ -1,6 +1,6 @@
 <?php
 
-namespace Symfony\Tests\Bridge\Doctrine\Form\Fixtures;
+namespace Symfony\Tests\Bridge\Doctrine\Fixtures;
 
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\Column;
@@ -18,5 +18,10 @@ class SingleIdentEntity
     public function __construct($id, $name) {
         $this->id = $id;
         $this->name = $name;
+    }
+
+    public function __toString()
+    {
+        return (string)$this->name;
     }
 }

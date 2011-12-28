@@ -11,22 +11,22 @@
 
 namespace Symfony\Tests\Bridge\Doctrine\Form\ChoiceList;
 
-require_once __DIR__.'/../DoctrineOrmTestCase.php';
+require_once __DIR__.'/../../DoctrineOrmTestCase.php';
 require_once __DIR__.'/../../Fixtures/ItemGroupEntity.php';
 require_once __DIR__.'/../../Fixtures/SingleIdentEntity.php';
 
-use Symfony\Tests\Bridge\Doctrine\Form\DoctrineOrmTestCase;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\ItemGroupEntity;
-use Symfony\Tests\Bridge\Doctrine\Form\Fixtures\SingleIdentEntity;
+use Symfony\Tests\Bridge\Doctrine\DoctrineOrmTestCase;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\ItemGroupEntity;
+use Symfony\Tests\Bridge\Doctrine\Fixtures\SingleIdentEntity;
 use Symfony\Bridge\Doctrine\Form\ChoiceList\EntityChoiceList;
 
 class EntityChoiceListTest extends DoctrineOrmTestCase
 {
-    const ITEM_GROUP_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\ItemGroupEntity';
+    const ITEM_GROUP_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\ItemGroupEntity';
 
-    const SINGLE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\SingleIdentEntity';
+    const SINGLE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\SingleIdentEntity';
 
-    const COMPOSITE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Form\Fixtures\CompositeIdentEntity';
+    const COMPOSITE_IDENT_CLASS = 'Symfony\Tests\Bridge\Doctrine\Fixtures\CompositeIdentEntity';
 
     private $em;
 
@@ -90,6 +90,26 @@ class EntityChoiceListTest extends DoctrineOrmTestCase
         );
 
         $this->assertSame(array(1 => 'Foo', 2 => 'Bar'), $choiceList->getChoices());
+    }
+
+    public function testEmptyChoicesAreManaged()
+    {
+        $entity1 = new SingleIdentEntity(1, 'Foo');
+        $entity2 = new SingleIdentEntity(2, 'Bar');
+
+        // Persist for managed state
+        $this->em->persist($entity1);
+        $this->em->persist($entity2);
+
+        $choiceList = new EntityChoiceList(
+            $this->em,
+            self::SINGLE_IDENT_CLASS,
+            'name',
+            null,
+            array()
+        );
+
+        $this->assertSame(array(), $choiceList->getChoices());
     }
 
     public function testNestedChoicesAreManaged()
@@ -175,5 +195,25 @@ class EntityChoiceListTest extends DoctrineOrmTestCase
             1 => 'Foo',
             2 => 'Bar'
         ), $choiceList->getChoices('choices'));
+    }
+
+    public function testPossibleToProvideShorthandEntityName()
+    {
+        $shorthandName = 'FooBarBundle:Bar';
+
+        $metadata = $this->getMockBuilder('Doctrine\ORM\Mapping\ClassMetadata')->disableOriginalConstructor()->getMock();
+        $metadata->expects($this->any())->method('getName')->will($this->returnValue('Symfony\Tests\Bridge\Doctrine\Fixtures\SingleIdentEntity'));
+
+        $em = $this->getMock('Doctrine\Common\Persistence\ObjectManager');
+        $em->expects($this->once())->method('getClassMetaData')->with($shorthandName)->will($this->returnValue($metadata));
+
+        $choiceList = new EntityChoiceList(
+            $em,
+            $shorthandName,
+            null,
+            null,
+            null,
+            null
+        );
     }
 }

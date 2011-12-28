@@ -145,7 +145,7 @@ abstract class AbstractAuthenticationListener implements ListenerInterface
                 $this->sessionStrategy->onAuthentication($request, $returnValue);
 
                 $response = $this->onSuccess($event, $request, $returnValue);
-            } else if ($returnValue instanceof Response) {
+            } elseif ($returnValue instanceof Response) {
                 $response = $returnValue;
             } else {
                 throw new \RuntimeException('attemptAuthentication() must either return a Response, an implementation of TokenInterface, or null.');
@@ -279,7 +279,7 @@ abstract class AbstractAuthenticationListener implements ListenerInterface
             return $targetUrl;
         }
 
-        if ($this->options['use_referer'] && $targetUrl = $request->headers->get('Referer')) {
+        if ($this->options['use_referer'] && ($targetUrl = $request->headers->get('Referer')) && $targetUrl !== $request->getUriForPath($this->options['login_path'])) {
             return $targetUrl;
         }
 

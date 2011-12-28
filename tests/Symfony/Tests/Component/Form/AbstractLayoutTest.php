@@ -1386,7 +1386,6 @@ abstract class AbstractLayoutTest extends \PHPUnit_Framework_TestCase
 '/input
     [@type="password"]
     [@name="na&me"]
-    [@value=""]
 '
         );
     }
@@ -1419,7 +1418,6 @@ abstract class AbstractLayoutTest extends \PHPUnit_Framework_TestCase
 '/input
     [@type="password"]
     [@name="na&me"]
-    [@value=""]
     [@maxlength="123"]
 '
         );
@@ -1493,11 +1491,13 @@ abstract class AbstractLayoutTest extends \PHPUnit_Framework_TestCase
     {
         $form = $this->factory->createNamed('textarea', 'na&me', 'foo&bar', array(
             'property_path' => 'name',
+            'pattern' => 'foo',
         ));
 
         $this->assertWidgetMatchesXpath($form->createView(), array(),
 '/textarea
     [@name="na&me"]
+    [not(@pattern)]
     [.="foo&bar"]
 '
         );

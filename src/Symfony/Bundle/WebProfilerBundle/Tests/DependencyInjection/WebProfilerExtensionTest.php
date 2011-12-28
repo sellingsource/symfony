@@ -17,7 +17,6 @@ use Symfony\Bundle\WebProfilerBundle\DependencyInjection\WebProfilerExtension;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Parameter;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 use Symfony\Component\DependencyInjection\Scope;
@@ -60,6 +59,7 @@ class WebProfilerExtensionTest extends TestCase
         $this->container->register('templating.engine.twig', $this->getMockClass('Symfony\\Bundle\\TwigBundle\\TwigEngine'))
             ->addArgument(new Definition($this->getMockClass('Twig_Environment')))
             ->addArgument(new Definition($this->getMockClass('Symfony\\Component\\Templating\\TemplateNameParserInterface')))
+            ->addArgument(new Definition($this->getMockClass('Symfony\Component\Config\FileLocatorInterface')))
             ->addArgument(new Definition($this->getMockClass('Symfony\\Bundle\\FrameworkBundle\\Templating\\GlobalVariables'), array(new Definition($this->getMockClass('Symfony\\Component\\DependencyInjection\\Container')))));
         $this->container->setParameter('kernel.bundles', array());
         $this->container->setParameter('kernel.cache_dir', __DIR__);

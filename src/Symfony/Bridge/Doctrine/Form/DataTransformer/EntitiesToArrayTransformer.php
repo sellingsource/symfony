@@ -28,10 +28,10 @@ class EntitiesToArrayTransformer implements DataTransformerInterface
     }
 
     /**
-     * Transforms entities into choice keys
+     * Transforms entities into choice keys.
      *
-     * @param Collection|object $collection A collection of entities, a single entity or
-     *                                      NULL
+     * @param  Collection|object $collection A collection of entities, a single entity or NULL
+     *
      * @return mixed An array of choice keys, a single key or NULL
      */
     public function transform($collection)
@@ -52,7 +52,7 @@ class EntitiesToArrayTransformer implements DataTransformerInterface
 
             foreach ($collection as $entity) {
                 // identify choices by their collection key
-                $key = array_search($entity, $availableEntities);
+                $key = array_search($entity, $availableEntities, true);
                 $array[] = $key;
             }
         } else {
@@ -66,11 +66,11 @@ class EntitiesToArrayTransformer implements DataTransformerInterface
     }
 
     /**
-     * Transforms choice keys into entities
+     * Transforms choice keys into entities.
      *
-     * @param  mixed $keys   An array of keys, a single key or NULL
-     * @return Collection|object  A collection of entities, a single entity
-     *                            or NULL
+     * @param  mixed $keys        An array of keys, a single key or NULL
+     *
+     * @return Collection|object  A collection of entities, a single entity or NULL
      */
     public function reverseTransform($keys)
     {
@@ -84,19 +84,13 @@ class EntitiesToArrayTransformer implements DataTransformerInterface
             throw new UnexpectedTypeException($keys, 'array');
         }
 
-        $notFound = array();
-
-        // optimize this into a SELECT WHERE IN query
-        foreach ($keys as $key) {
-            if ($entity = $this->choiceList->getEntity($key)) {
-                $collection->add($entity);
-            } else {
-                $notFound[] = $key;
-            }
+        $entities = $this->choiceList->getEntitiesByKeys($keys);
+        if (count($keys) !== count($entities)) {
+            throw new TransformationFailedException('Not all entities matching the keys were found.');
         }
 
-        if (count($notFound) > 0) {
-            throw new TransformationFailedException(sprintf('The entities with keys "%s" could not be found', implode('", "', $notFound)));
+        foreach ($entities as $entity) {
+            $collection->add($entity);
         }
 
         return $collection;
